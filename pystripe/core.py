@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg']
+supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg', '.png']
 nb_retry = 10
 
 
