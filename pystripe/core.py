@@ -15,7 +15,6 @@ from .lightsheet_correct import correct_lightsheet
 import warnings
 warnings.filterwarnings("ignore")
 
-print('test message')
 
 supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg']
 nb_retry = 10
