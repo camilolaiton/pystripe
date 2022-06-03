@@ -19,7 +19,6 @@ warnings.filterwarnings("ignore")
 supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg', '.png']
 nb_retry = 10
 
-print('test')
 
 def _get_extension(path):
     """Extract the file extension from the provided path
