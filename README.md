@@ -43,14 +43,14 @@ A typical result looks like this:
 Installation can be done using `pip`, e.g.
 
 ```bash
-> pip install https://github.com/chunglabmit/pystripe/archive/master.zip
+> pip install https://github.com/joegruss/pystripe/archive/master.zip
 ```
 
 If using the provided Windows batch scripts, install within a conda environment
 ```bash
 > conda create -n pystripe python==3.6
 > activate pystripe
-> pip install https://github.com/chunglabmit/pystripe/archive/master.zip
+> pip install https://github.com/joegruss/pystripe/archive/master.zip
 ```
 
 ## Command-line interface (CLI)
