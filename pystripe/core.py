@@ -139,7 +139,7 @@ def imsave(path, img, compression=1):
 
     """
     extension = _get_extension(path)
-    if extension == '.raw':
+    if extension == '.raw' or extension == '.png':
         # TODO: get raw writing to work
         # raw.raw_imsave(path, img)
         tifffile.imsave(os.path.splitext(path)[0]+'.tif', img, compress=compression)
