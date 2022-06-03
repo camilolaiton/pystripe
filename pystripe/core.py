@@ -142,7 +142,7 @@ def imsave(path, img, compression=1):
     if extension == '.raw' or extension == '.png':
         # TODO: get raw writing to work
         # raw.raw_imsave(path, img)
-        tifffile.imsave(os.path.splitext(path)[0]+'.tif', img, compress=compression)
+        tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compress=compression)
     elif extension == '.tif' or extension == '.tiff':
         tifffile.imsave(path, img, compress=compression)
 
@@ -486,7 +486,7 @@ def filter_streaks(img, sigma, level=0, wavelet='db3', crossover=10, threshold=-
     return fimg
 
 
-def read_filter_save(input_path, output_path, sigma, level=0, wavelet='db3',
+def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, wavelet='db3',
                      crossover=10, threshold=-1, compression=1,
                      flat=None, dark=0, z_idx=None, rotate=False,
                      lightsheet=False,
@@ -502,6 +502,8 @@ def read_filter_save(input_path, output_path, sigma, level=0, wavelet='db3',
 
     Parameters
     ----------
+    output_root_dir : Path
+        highest level output path (error log location)
     input_path : Path
         path to the image to filter
     output_path : Path
@@ -539,17 +541,28 @@ def read_filter_save(input_path, output_path, sigma, level=0, wavelet='db3',
     dont_convert_16bit : bool
         Flag for converting to 16-bit
     """
-    if z_idx is None:
-        # Path must be TIFF or RAW
-        img = imread(str(input_path))
-        dtype = img.dtype
-        if not dont_convert_16bit:
+
+    
+    try:
+        if z_idx is None:
+            # Path must be TIFF or RAW
+            img = imread(str(input_path))
+            dtype = img.dtype
+            if not dont_convert_16bit:
+                dtype = np.uint16
+        else:
+            # Path must be to DCIMG file
+            assert str(input_path).endswith('.dcimg')
+            img = imread_dcimg(str(input_path), z_idx)
             dtype = np.uint16
-    else:
-        # Path must be to DCIMG file
-        assert str(input_path).endswith('.dcimg')
-        img = imread_dcimg(str(input_path), z_idx)
-        dtype = np.uint16
+    except:
+        # output_dir = os.path.dirname(output_path)
+        file_name = os.path.join(output_root_dir, 'error_log.txt')
+        error_file = open(file_name, 'a+')
+        error_file.write("Error reading {}.  File not processed\n".format(input_path))
+        error_file.close()
+        return
+
     if rotate:
         img = np.rot90(img)
     if not lightsheet:
@@ -681,6 +694,11 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavel
     dont_convert_16bit : bool
         Flag for converting to 16-bit
     """
+    
+    error_path = os.path.join(output_path, 'error_log.txt')
+    if os.path.exists(error_path):
+        os.remove(error_path)
+
     if workers == 0:
         workers = multiprocessing.cpu_count()
     print('Looking for images in {}...'.format(input_path))
@@ -699,6 +717,7 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavel
         if not o.parent.exists():
             o.parent.mkdir(parents=True)
         arg_dict = {
+            'output_root_dir': output_path,
             'input_path': p,
             'output_path': o,
             'sigma': sigma,
@@ -723,6 +742,11 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavel
     with multiprocessing.Pool(workers) as pool:
         list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
     print('Done!')
+
+    if os.path.exists(error_path):
+        with open(error_path, 'r') as fp:
+            x = len(fp.readlines())
+        print('{} images could not be opened and were bypassed.  See error log for more details'.format(x))
 
 
 def normalize_flat(flat):
