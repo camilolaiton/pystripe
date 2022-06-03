@@ -16,6 +16,7 @@ from .lightsheet_correct import correct_lightsheet
 import warnings
 warnings.filterwarnings("ignore")
 
+print('test message')
 
 supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg', '.png']
 nb_retry = 10
@@ -694,7 +695,7 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavel
     dont_convert_16bit : bool
         Flag for converting to 16-bit
     """
-    
+
     error_path = os.path.join(output_path, 'error_log.txt')
     if os.path.exists(error_path):
         os.remove(error_path)
