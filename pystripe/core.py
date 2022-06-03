@@ -6,6 +6,7 @@ import numpy as np
 from scipy import fftpack, ndimage
 from skimage.filters import threshold_otsu
 import tifffile
+import imageio as iio
 import pywt
 import multiprocessing
 import tqdm
@@ -57,6 +58,8 @@ def imread(path):
         img = raw.raw_imread(path)
     elif extension == '.tif' or extension == '.tiff':
         img = tifffile.imread(path)
+    elif extension == '.png':
+        img = iio.imread(path)
     return img
 
 
