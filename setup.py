@@ -26,7 +26,7 @@ setup(
     entry_points={ 'console_scripts': [
         'pystripe=pystripe.core:main',
     ]},
-    url="https://github.com/chunglabmit/pystripe",
+    url="https://github.com/joegruss/pystripe",
     license="MIT",
     classifiers=[
         "Development Status :: 3 - Alpha",
