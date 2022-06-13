@@ -1,14 +1,13 @@
-from sys import _version_info
 from setuptools import setup, find_packages
 
-exec(open('pystripe/version.py').read())
+version = "1.0.0"
 
 with open("./README.md") as fd:
     long_description = fd.read()
 
 setup(
     name="pystripe",
-    version=_version_info,
+    version=version,
     description=
     "Stripe artifact filtering for SPIM images",
     long_description=long_description,
