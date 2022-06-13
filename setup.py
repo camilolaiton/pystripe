@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = "1.0.0"
+version = "1.0.2"
 
 with open("./README.md") as fd:
     long_description = fd.read()
@@ -22,7 +22,7 @@ setup(
         "pathlib2",
         "dcimg"
     ],
-    author="Kwanghun Chung Lab",
+    author="LifeCanvas Technologies",
     packages=["pystripe"],
     entry_points={ 'console_scripts': [
         'pystripe=pystripe.core:main',
