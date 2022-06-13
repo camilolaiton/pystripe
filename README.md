@@ -40,17 +40,8 @@ A typical result looks like this:
 
 ## Installation
 
-Installation can be done using `pip`, e.g.
-
 ```bash
-> pip install https://github.com/joegruss/pystripe/archive/master.zip
-```
-
-If using the provided Windows batch scripts, install within a conda environment
-```bash
-> conda create -n pystripe python==3.6
-> activate pystripe
-> pip install https://github.com/joegruss/pystripe/archive/master.zip
+> pip install pystripe
 ```
 
 ## Command-line interface (CLI)
