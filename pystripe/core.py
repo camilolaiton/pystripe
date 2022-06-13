@@ -754,7 +754,7 @@ def normalize_flat(flat):
 
 
 def _parse_args():
-    parser = argparse.ArgumentParser(description="Pystripe (version 0.2.0)\n\n"
+    parser = argparse.ArgumentParser(description="Pystripe\n\n"
         "If only sigma1 is specified, only foreground of the images will be filtered.\n"
         "If sigma2 is specified and sigma1 = 0, only the background of the images will be filtered.\n"
         "If sigma1 == sigma2 > 0, input images will not be split before filtering.\n"

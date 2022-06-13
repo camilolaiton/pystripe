@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = "1.0.2"
+version = "1.0.4"
 
 with open("./README.md") as fd:
     long_description = fd.read()
@@ -27,7 +27,7 @@ setup(
     entry_points={ 'console_scripts': [
         'pystripe=pystripe.core:main',
     ]},
-    url="https://github.com/joegruss/pystripe",
+    url="https://github.com/LifeCanvas-Technologies/pystripe",
     license="MIT",
     classifiers=[
         "Development Status :: 3 - Alpha",

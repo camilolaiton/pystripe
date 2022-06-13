@@ -4,4 +4,4 @@ from pystripe.core import filter_streaks, batch_filter, \
                           waverec, wavedec, \
                           fft, ifft, fft2, ifft2, magnitude
 
-__version__ = "1.0.2"
+# __version__ = "1.0.2"
