@@ -743,8 +743,9 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     print('Done!')
 
     if auto_mode:
+        img_path_strs = list(str(path) for path in img_paths)
         with open(os.path.join(output_path, 'destriped_image_list.txt'), 'w') as fp:
-            fp.writelines(img_paths)
+            fp.writelines(img_path_strs)
             fp.close
 
     if os.path.exists(error_path):
