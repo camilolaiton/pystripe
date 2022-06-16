@@ -649,7 +649,7 @@ def _find_all_images(input_path, zstep=None):
     return img_paths
 
 
-def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavelet='db3', crossover=10,
+def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, level=0, wavelet='db3', crossover=10,
                  threshold=-1, compression=1, flat=None, dark=0, zstep=None, rotate=False,
                  lightsheet=False,
                  artifact_length=150,
@@ -742,10 +742,16 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, level=0, wavel
         list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
     print('Done!')
 
+    if auto_mode:
+        with open(os.path.join(output_path, 'destriped_image_list.txt'), 'w') as fp:
+            fp.writelines(img_paths)
+            fp.close
+
     if os.path.exists(error_path):
         with open(error_path, 'r') as fp:
             x = len(fp.readlines())
-        print('{} images could not be opened and were bypassed.  See error log for more details'.format(x))
+            print('{} images could not be opened and were bypassed.  See error log for more details'.format(x))
+            fp.close()
 
 
 def normalize_flat(flat):
@@ -842,6 +848,7 @@ def main():
                      workers=args.workers,
                      chunks=args.chunks,
                      sigma=sigma,
+                     auto_mode=False,
                      level=args.level,
                      wavelet=args.wavelet,
                      crossover=args.crossover,
