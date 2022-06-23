@@ -702,11 +702,6 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
         Flag for converting to 16-bit
     """
 
-    print('testing version')
-
-
-
-
     error_path = os.path.join(output_path, 'error_log.txt')
     if os.path.exists(error_path):
         os.remove(error_path)
@@ -752,7 +747,14 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
         args.append(arg_dict)
     print('Pystripe batch processing progress:')
     with multiprocessing.Pool(workers) as pool:
-        list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
+        if auto_mode:
+            list(tqdm.tqdm(
+                pool.imap(_read_filter_save, args, chunksize=chunks), 
+                total=len(args), 
+                ascii=True,
+                bar_format='{l_bar}{bar:60}{r_bar}{bar:-10b}'))
+        else:
+            list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
     print('Done!')
 
     if auto_mode:
