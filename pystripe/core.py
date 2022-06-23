@@ -613,7 +613,7 @@ def _read_filter_save(input_dict):
     read_filter_save(**input_dict)
 
 
-def _find_all_images(input_path, zstep=None):
+def _find_all_images(search_path, input_path, output_path, zstep=None):
     """Find all images with a supported file extension within a directory and all its subdirectories
 
     Parameters
@@ -630,9 +630,12 @@ def _find_all_images(input_path, zstep=None):
 
     """
     input_path = Path(input_path)
-    assert input_path.is_dir()
+    output_path = Path(output_path)
+    search_path = Path(search_path)
+
+    assert search_path.is_dir()
     img_paths = []
-    for p in input_path.iterdir():
+    for p in search_path.iterdir():
         if p.is_file():
             if p.suffix in supported_extensions:
                 if p.suffix == '.dcimg':
@@ -645,7 +648,12 @@ def _find_all_images(input_path, zstep=None):
                 else:
                     img_paths.append(p)
         elif p.is_dir():
-            img_paths.extend(_find_all_images(p, zstep))
+            rel_path = p.relative_to(input_path)
+            o = output_path.joinpath(rel_path)
+            if not o.exists():
+                o.mkdir(parents=True)
+            img_paths.extend(_find_all_images(p, input_path, output_path, zstep))
+
     return img_paths
 
 
@@ -694,6 +702,11 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
         Flag for converting to 16-bit
     """
 
+    print('testing version')
+
+
+
+
     error_path = os.path.join(output_path, 'error_log.txt')
     if os.path.exists(error_path):
         os.remove(error_path)
@@ -701,7 +714,7 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     if workers == 0:
         workers = multiprocessing.cpu_count()
     print('Looking for images in {}...'.format(input_path))
-    img_paths = _find_all_images(input_path, zstep)
+    img_paths = _find_all_images(input_path, input_path, output_path, zstep)
     print('Found {} compatible images'.format(len(img_paths)))
     print('Setting up {} workers...'.format(workers))
     args = []
