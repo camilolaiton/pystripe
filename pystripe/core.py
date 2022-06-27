@@ -14,6 +14,7 @@ from dcimg import DCIMGFile
 from pystripe import raw
 from .lightsheet_correct import correct_lightsheet
 import warnings
+import shutil
 warnings.filterwarnings("ignore")
 
 supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg', '.png']
@@ -633,6 +634,8 @@ def _find_all_images(search_path, input_path, output_path, zstep=None):
     output_path = Path(output_path)
     search_path = Path(search_path)
 
+
+
     assert search_path.is_dir()
     img_paths = []
     for p in search_path.iterdir():
@@ -755,6 +758,12 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
                 bar_format='{l_bar}{bar:60}{r_bar}{bar:-10b}'))
         else:
             list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
+    
+    for file in input_path.iterdir():
+        if Path(file).suffix in ['.txt', '.ini']:
+            output_file = os.path.join(output_path, os.path.split(file)[1])
+            shutil.copyfile(file, output_file)
+    
     print('Done!')
 
     if auto_mode:
