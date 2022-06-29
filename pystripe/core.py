@@ -706,8 +706,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     """
 
     error_path = os.path.join(output_path, 'error_log.txt')
-    if os.path.exists(error_path):
-        os.remove(error_path)
+    # if os.path.exists(error_path):
+    #     os.remove(error_path)
 
     if workers == 0:
         workers = multiprocessing.cpu_count()
@@ -762,7 +762,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     for file in input_path.iterdir():
         if Path(file).suffix in ['.txt', '.ini']:
             output_file = os.path.join(output_path, os.path.split(file)[1])
-            shutil.copyfile(file, output_file)
+            if not os.path.exists(output_file):
+                shutil.copyfile(file, output_file)
     
     print('Done!')
 
