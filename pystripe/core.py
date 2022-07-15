@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter
 from pathlib import Path
-import os
+import os, time
 import numpy as np
 from scipy import fftpack, ndimage
 from skimage.filters import threshold_otsu
@@ -542,26 +542,36 @@ def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, w
         Flag for converting to 16-bit
     """
 
-    
-    try:
-        if z_idx is None:
-            # Path must be TIFF or RAW
-            img = imread(str(input_path))
-            dtype = img.dtype
-            if not dont_convert_16bit:
+    n = 3
+    for i in range(n):
+        try:
+            if z_idx is None:
+                # Path must be TIFF or RAW
+                img = imread(str(input_path))
+                dtype = img.dtype
+                if not dont_convert_16bit:
+                    dtype = np.uint16
+            else:
+                # Path must be to DCIMG file
+                assert str(input_path).endswith('.dcimg')
+                img = imread_dcimg(str(input_path), z_idx)
                 dtype = np.uint16
-        else:
-            # Path must be to DCIMG file
-            assert str(input_path).endswith('.dcimg')
-            img = imread_dcimg(str(input_path), z_idx)
-            dtype = np.uint16
-    except:
-        # output_dir = os.path.dirname(output_path)
-        file_name = os.path.join(output_root_dir, 'error_log.txt')
-        error_file = open(file_name, 'a+')
-        error_file.write("Error reading {}.  File not processed\n".format(input_path))
-        error_file.close()
-        return
+        except:
+            if i == n -1:
+                file_name = os.path.join(output_root_dir, 'destripe_log.txt')
+                if not os.path.exists(file_name):
+                    error_file = open(file_name, 'w')
+                    error_file.write('Error reading the following images.  Pystripe will interpolate their content.')
+                    error_file.close()
+                error_file = open(file_name, 'a+')
+                error_file.write('\n{}'.format(str(input_path)))
+                error_file.close()
+                return
+            else:
+                time.sleep(0.05)
+                continue
+            # output_dir = os.path.dirname(output_path)
+            
 
     if rotate:
         img = np.rot90(img)
@@ -705,15 +715,29 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
         Flag for converting to 16-bit
     """
 
-    error_path = os.path.join(output_path, 'error_log.txt')
-    # if os.path.exists(error_path):
-    #     os.remove(error_path)
+    error_path = os.path.join(output_path, 'destripe_log.txt')
+    if os.path.exists(error_path):
+        os.remove(error_path)
 
     if workers == 0:
         workers = multiprocessing.cpu_count()
     print('Looking for images in {}...'.format(input_path))
     img_paths = _find_all_images(input_path, input_path, output_path, zstep)
     print('Found {} compatible images'.format(len(img_paths)))
+    if auto_mode:
+        count_path = os.path.join(input_path, 'image_count.txt')
+        # print('count_path: {} count: {}'.format(count_path, len(img_paths)))
+        with open(count_path, 'w') as fp:
+            fp.write(str(len(img_paths)))
+            fp.close
+            
+    # copy text and ini files
+    for file in input_path.iterdir():
+        if Path(file).suffix in ['.txt', '.ini']:
+            output_file = os.path.join(output_path, os.path.split(file)[1])
+            if not os.path.exists(output_file):
+                shutil.copyfile(file, output_file)
+                
     print('Setting up {} workers...'.format(workers))
     args = []
     for p in img_paths:
@@ -758,25 +782,27 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
                 bar_format='{l_bar}{bar:60}{r_bar}{bar:-10b}'))
         else:
             list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
-    
-    for file in input_path.iterdir():
-        if Path(file).suffix in ['.txt', '.ini']:
-            output_file = os.path.join(output_path, os.path.split(file)[1])
-            if not os.path.exists(output_file):
-                shutil.copyfile(file, output_file)
+
     
     print('Done!')
 
     if auto_mode:
         img_path_strs = list(str(path) for path in img_paths)
-        with open(os.path.join(output_path, 'destriped_image_list.txt'), 'w') as fp:
+        list_path = os.path.join(output_path, 'destriped_image_list.txt')
+        with open(list_path, 'w') as fp:
             fp.write('\n'.join(img_path_strs) + '\n')
             fp.close
+        # print('writing image list: {}'.format(list_path))
+        
 
     if os.path.exists(error_path):
         with open(error_path, 'r') as fp:
-            x = len(fp.readlines())
-            print('{} images could not be opened and were bypassed.  See error log for more details'.format(x))
+            first_line = fp.readline()
+            images = fp.readlines()
+            for image_path in images:
+                interpolate(image_path, input_path, output_path)
+            x = len(images)
+            print('{} images could not be opened and were interpolated.  See destripe log for more details'.format(x))
             fp.close()
 
 
@@ -819,6 +845,41 @@ def _parse_args():
     args = parser.parse_args()
     return args
 
+
+def interpolate(image_path, input_path, output_path):
+    # print('Interpolate:\nimage_path: {}\ninput_path: {}\noutput_path: {}\n'.format(image_path, input_path, output_path))
+    rel_path = Path(image_path).relative_to(input_path)
+    o_dir = os.path.dirname(output_path.joinpath(rel_path))
+    # print('other files in output directory:')
+    # print(os.listdir(o_dir))
+    image_num = int(os.path.splitext(os.path.split(image_path)[1])[0])
+    closest_image = {
+        'name': os.listdir(o_dir)[0],
+        'distance': abs(int(os.path.splitext(os.listdir(o_dir)[0])[0]) - image_num)
+        }
+    # print('image_num: {}\nclosest image:'.format(image_num))
+    # print(closest_image)
+    for filename in os.listdir(o_dir):
+        try: 
+            test_num = int(os.path.splitext(filename)[0])
+        except:
+            continue
+        if abs(test_num - image_num) < closest_image['distance']:
+            closest_image['name'] = filename
+            closest_image['distance'] = abs(test_num - image_num)
+            # print('closest_image:')
+            # print(closest_image)
+    new_file_name = str(image_num) + os.path.splitext(closest_image['name'])[1]
+    try:
+        shutil.copyfile(os.path.join(o_dir, closest_image['name']), os.path.join(o_dir, new_file_name))
+    except Exception as e:
+        # print(e)
+        pass
+    
+    
+    
+    
+    
 
 def main():
     args = _parse_args()
