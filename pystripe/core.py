@@ -724,12 +724,21 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     print('Looking for images in {}...'.format(input_path))
     img_paths = _find_all_images(input_path, input_path, output_path, zstep)
     print('Found {} compatible images'.format(len(img_paths)))
-    if auto_mode:
-        count_path = os.path.join(input_path, 'image_count.txt')
+    # if auto_mode:
+        # count_path = os.path.join(input_path, 'image_count.txt')
         # print('count_path: {} count: {}'.format(count_path, len(img_paths)))
-        with open(count_path, 'w') as fp:
-            fp.write(str(len(img_paths)))
+        # with open(count_path, 'w') as fp:
+            # fp.write(str(len(img_paths)))
+            # fp.close
+            
+    if auto_mode:
+        img_path_strs = list(str(path) for path in img_paths)
+        list_path = os.path.join(output_path, 'destriped_image_list.txt')
+        # print('writing image_list.  {} images'.format(len(img_path_strs)))
+        with open(list_path, 'w') as fp:
+            fp.write('\n'.join(img_path_strs) + '\n')
             fp.close
+        # print('writing image list: {}'.format(list_path))
             
     # copy text and ini files
     for file in input_path.iterdir():
@@ -786,13 +795,7 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     
     print('Done!')
 
-    if auto_mode:
-        img_path_strs = list(str(path) for path in img_paths)
-        list_path = os.path.join(output_path, 'destriped_image_list.txt')
-        with open(list_path, 'w') as fp:
-            fp.write('\n'.join(img_path_strs) + '\n')
-            fp.close
-        # print('writing image list: {}'.format(list_path))
+
         
 
     if os.path.exists(error_path):
