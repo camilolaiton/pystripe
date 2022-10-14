@@ -909,7 +909,10 @@ def main():
         else:
             output_path = Path(args.output)
             assert output_path.suffix in supported_extensions
-        read_filter_save(input_path,
+        output_root_dir = output_path
+        
+        read_filter_save(output_root_dir,
+                         input_path,
                          output_path,
                          sigma=sigma,
                          level=args.level,
@@ -927,6 +930,7 @@ def main():
                          lightsheet_vs_background=args.lightsheet_vs_background,
                          dont_convert_16bit=args.dont_convert_16bit
                          )
+
     elif input_path.is_dir():  # batch processing
         if args.output == '':
             output_path = Path(input_path.parent).joinpath(str(input_path)+'_destriped')
