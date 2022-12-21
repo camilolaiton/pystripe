@@ -437,7 +437,7 @@ def filter_streaks(img, sigma, level=0, wavelet='db3', crossover=10, threshold=-
         except ValueError:
             threshold = 1
 
-    img = np.array(img, dtype=np.float)
+    img = np.array(img, dtype=np.float64)
     #
     # Need to pad image to multiple of 2
     #
