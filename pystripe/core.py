@@ -612,8 +612,8 @@ def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, w
     for _ in range(nb_retry):
         try:
             imsave(str(output_path), fimg.astype(dtype), compression=compression, output_format=output_format)
-        except OSError:
-            print('Retrying...')
+        except OSError as err:
+            print(f'Retrying... Error: {err} Output path: {output_path}')
             continue
         break
 
