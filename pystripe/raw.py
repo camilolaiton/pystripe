@@ -39,7 +39,7 @@ def raw_imread(path):
                          dtype=dtype,
                          mode="r",
                          offset=8,
-                         shape=(height, width))
+                         shape=(width, height))
     except:
         print("Bad path: %s" % path)
         raise
