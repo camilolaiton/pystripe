@@ -744,8 +744,7 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
     for file in input_path.iterdir():
         if Path(file).suffix in ['.txt', '.ini']:
             output_file = os.path.join(output_path, os.path.split(file)[1])
-            if not os.path.exists(output_file):
-                shutil.copyfile(file, output_file)
+            shutil.copyfile(file, output_file)
                 
     print('Setting up {} workers...'.format(workers))
     args = []
