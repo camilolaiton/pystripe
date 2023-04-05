@@ -15,9 +15,11 @@ from pystripe import raw
 from .lightsheet_correct import correct_lightsheet
 import warnings
 import shutil
+from typing import Optional
 warnings.filterwarnings("ignore")
 
 supported_extensions = ['.tif', '.tiff', '.raw', '.dcimg', '.png']
+supported_output_extensions = ['.tif', '.tiff', '.png']
 nb_retry = 10
 
 
@@ -60,6 +62,7 @@ def imread(path):
         img = tifffile.imread(path)
     elif extension == '.png':
         img = iio.imread(path)
+
     return img
 
 
@@ -123,7 +126,7 @@ def check_dcimg_start(path):
     return int(os.path.basename(path).split('.')[0])
 
 
-def imsave(path, img, compression=1):
+def imsave(path, img, compression=1, output_format:Optional[str]=None):
     """Save an array as a tiff or raw image
 
     The file format will be inferred from the file extension in `path`
@@ -136,16 +139,38 @@ def imsave(path, img, compression=1):
         image as a numpy array
     compression : int
         compression level for tiff writing
-
+    output_format : Optional[str]
+        Desired format extension to save the image. Default: None
+        Accepted ['.tiff', '.tif', '.png']
     """
     extension = _get_extension(path)
-    if extension == '.raw' or extension == '.png':
-        # TODO: get raw writing to work
-        # raw.raw_imsave(path, img)
-        tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compress=compression)
-    elif extension == '.tif' or extension == '.tiff':
-        tifffile.imsave(path, img, compress=compression)
 
+    if output_format is None:
+        # Saving any input format to tiff
+        if extension == '.raw' or extension == '.png':
+            # TODO: get raw writing to work
+            # raw.raw_imsave(path, img)
+            tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compress=compression) # Use with versions <= 2020.9.3
+            # tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compressionargs={'level': compression}) # Use with version 2023.03.21
+
+        elif extension == '.tif' or extension == '.tiff':
+            tifffile.imsave(path, img, compress=compression) # Use with versions <= 2020.9.3
+            # tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
+
+    else:
+        # Saving output images based on the output format
+        if output_format not in supported_output_extensions:
+            raise ValueError(f"Output format {output_format} is not valid! Supported extensions are: {supported_output_extensions}")
+
+        filename = os.path.splitext(path)[0] + output_format
+        if output_format == '.tif' or output_format == '.tiff':
+            tifffile.imsave(filename, img, compress=compression) # Use with versions <= 2020.9.3
+            # tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
+        
+        elif output_format == '.png':
+            # print(img.dtype)
+            iio.imwrite(filename, img, compress_level=compression) # Works fine up to version 2.15.0
+            # iio.v3.imwrite(filename, img, compress_level=compression) # version 2.27.0
 
 def wavedec(img, wavelet, level=None):
     """Decompose `img` using discrete (decimated) wavelet transform using `wavelet`
@@ -423,7 +448,7 @@ def filter_streaks(img, sigma, level=0, wavelet='db3', crossover=10, threshold=-
         except ValueError:
             threshold = 1
 
-    img = np.array(img, dtype=np.float)
+    img = np.array(img, dtype=float) # np.float deprecated in version 1.20
     #
     # Need to pad image to multiple of 2
     #
@@ -494,7 +519,7 @@ def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, w
                      background_window_size=200,
                      percentile=.25,
                      lightsheet_vs_background=2.0,
-                     dont_convert_16bit=False):
+                     dont_convert_16bit=False, output_format=None):
 
     """Convenience wrapper around filter streaks. Takes in a path to an image rather than an image array
 
@@ -540,6 +565,8 @@ def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, w
         weighting factor to use background or lightsheet background
     dont_convert_16bit : bool
         Flag for converting to 16-bit
+    output_format: str
+        Desired output format [.png, .tiff, .tif]. Default None
     """
 
     n = 3
@@ -595,7 +622,7 @@ def read_filter_save(output_root_dir, input_path, output_path, sigma, level=0, w
     # Save image, retry if OSError for NAS
     for _ in range(nb_retry):
         try:
-            imsave(str(output_path), fimg.astype(dtype), compression=compression)
+            imsave(str(output_path), fimg.astype(dtype), compression=compression, output_format=output_format)
         except OSError:
             print('Retrying...')
             continue
@@ -677,7 +704,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
                  background_window_size=200,
                  percentile=.25,
                  lightsheet_vs_background=2.0,
-                 dont_convert_16bit=False
+                 dont_convert_16bit=False,
+                 output_format=None
                  ):
     """Applies `streak_filter` to all images in `input_path` and write the results to `output_path`.
 
@@ -713,6 +741,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
         Flag for 90 degree rotation.
     dont_convert_16bit : bool
         Flag for converting to 16-bit
+    output_format: str
+        Desired output format [.png, .tiff, .tif]. Default None
     """
 
     error_path = os.path.join(output_path, 'destripe_log.txt')
@@ -777,7 +807,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
             'background_window_size': background_window_size,
             'percentile': percentile,
             'lightsheet_vs_background': lightsheet_vs_background,
-            'dont_convert_16bit' : dont_convert_16bit
+            'dont_convert_16bit' : dont_convert_16bit,
+            'output_format': output_format
         }
         args.append(arg_dict)
     print('Pystripe batch processing progress:')
@@ -844,6 +875,7 @@ def _parse_args():
     parser.add_argument("--percentile", help="The percentile at which to measure the background", type=float, default=.25)
     parser.add_argument("--lightsheet-vs-background", help="The background is multiplied by this weight when comparing lightsheet against background", type=float, default=2.0)
     parser.add_argument("--dont-convert-16bit", help="Is the output converted to 16-bit .tiff or not", action="store_true")
+    parser.add_argument("--output_format", "-of", help="Desired format output for the images", type=str, required=False, default=None)
     args = parser.parse_args()
     return args
 
@@ -899,6 +931,9 @@ def main():
     if args.dark < 0:
         raise ValueError('Only positive values for dark offset are allowed')
 
+    if args.output_format is not None and args.output_format not in supported_output_extensions:
+        raise ValueError(f"Output format {args.output_format} is currently not supported! Supported formats are: {supported_output_extensions}")
+
     if input_path.is_file():  # single image
         if input_path.suffix not in supported_extensions:
             print('Input file was found but is not supported. Exiting...')
@@ -927,7 +962,8 @@ def main():
                          background_window_size=args.background_window_size,
                          percentile=args.percentile,
                          lightsheet_vs_background=args.lightsheet_vs_background,
-                         dont_convert_16bit=args.dont_convert_16bit
+                         dont_convert_16bit=args.dont_convert_16bit,
+                         output_format=args.output_format
                          )
 
     elif input_path.is_dir():  # batch processing
@@ -956,7 +992,8 @@ def main():
                      background_window_size=args.background_window_size,
                      percentile=args.percentile,
                      lightsheet_vs_background=args.lightsheet_vs_background,
-                     dont_convert_16bit=args.dont_convert_16bit
+                     dont_convert_16bit=args.dont_convert_16bit,
+                     output_format=args.output_format
                      )
     else:
         print('Cannot find input file or directory. Exiting...')
