@@ -150,12 +150,12 @@ def imsave(path, img, compression=1, output_format:Optional[str]=None):
         if extension == '.raw' or extension == '.png':
             # TODO: get raw writing to work
             # raw.raw_imsave(path, img)
-            tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compress=compression) # Use with versions <= 2020.9.3
-            # tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compressionargs={'level': compression}) # Use with version 2023.03.21
+            # tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compress=compression) # Use with versions <= 2020.9.3
+            tifffile.imsave(os.path.splitext(path)[0]+'.tiff', img, compressionargs={'level': compression}) # Use with version 2023.03.21
 
         elif extension == '.tif' or extension == '.tiff':
-            tifffile.imsave(path, img, compress=compression) # Use with versions <= 2020.9.3
-            # tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
+            # tifffile.imsave(path, img, compress=compression) # Use with versions <= 2020.9.3
+            tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
 
     else:
         # Saving output images based on the output format
@@ -164,13 +164,13 @@ def imsave(path, img, compression=1, output_format:Optional[str]=None):
 
         filename = os.path.splitext(path)[0] + output_format
         if output_format == '.tif' or output_format == '.tiff':
-            tifffile.imsave(filename, img, compress=compression) # Use with versions <= 2020.9.3
-            # tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
+            # tifffile.imsave(filename, img, compress=compression) # Use with versions <= 2020.9.3
+            tifffile.imsave(path, img, compressionargs={'level': compression}) # Use with version 2023.03.21
         
         elif output_format == '.png':
             # print(img.dtype)
-            iio.imwrite(filename, img, compress_level=compression) # Works fine up to version 2.15.0
-            # iio.v3.imwrite(filename, img, compress_level=compression) # version 2.27.0
+            # iio.imwrite(filename, img, compress_level=compression) # Works fine up to version 2.15.0
+            iio.v3.imwrite(filename, img, compress_level=compression) # version 2.27.0
 
 def wavedec(img, wavelet, level=None):
     """Decompose `img` using discrete (decimated) wavelet transform using `wavelet`
