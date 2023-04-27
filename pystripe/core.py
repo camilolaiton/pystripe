@@ -449,6 +449,7 @@ def filter_streaks(img, sigma, level=0, wavelet='db3', crossover=10, threshold=-
             threshold = 1
 
     img = np.array(img, dtype=float) # np.float deprecated in version 1.20
+
     #
     # Need to pad image to multiple of 2
     #
@@ -821,12 +822,8 @@ def batch_filter(input_path, output_path, workers, chunks, sigma, auto_mode, lev
                 bar_format='{l_bar}{bar:60}{r_bar}{bar:-10b}'))
         else:
             list(tqdm.tqdm(pool.imap(_read_filter_save, args, chunksize=chunks), total=len(args), ascii=True))
-
     
     print('Done!')
-
-
-        
 
     if os.path.exists(error_path):
         with open(error_path, 'r') as fp:
@@ -909,11 +906,7 @@ def interpolate(image_path, input_path, output_path):
     except Exception as e:
         # print(e)
         pass
-    
-    
-    
-    
-    
+
 
 def main():
     args = _parse_args()
@@ -927,6 +920,9 @@ def main():
     zstep = None
     if args.zstep is not None:
         zstep = int(args.zstep * 10)
+
+    if args.output_format not in ['.png', '.tif', '.tiff']:
+        raise ValueError("Custom output format not supported.")
 
     if args.dark < 0:
         raise ValueError('Only positive values for dark offset are allowed')
